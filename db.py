@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from config import mongo_uri,db_name 
@@ -13,11 +12,6 @@ try:
 
 except Exception as e:
     print(f"Failed to connect to MongoDB: {e}")
-
-class PaymentMethodType(Enum):
-    BANK = "bank"
-    PAYPAL = "paypal"
-    CRYPTO = "crypto"
 
 async def get_user(user_id: int):
     try:
