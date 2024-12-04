@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from config import mongo_uri,db_name 
@@ -12,6 +13,11 @@ try:
 
 except Exception as e:
     print(f"Failed to connect to MongoDB: {e}")
+
+class PaymentMethodType(Enum):
+    BANK = "bank"
+    PAYPAL = "paypal"
+    CRYPTO = "crypto"
 
 async def get_user(user_id: int):
     try:
@@ -56,7 +62,6 @@ async def get_user_balance(user_id: int) -> int:
     try:
         user = await get_user(user_id)
         if user:
-            print(user)
             balance = user.get("balance", 0)
             return balance 
         elif user is None:
@@ -138,3 +143,36 @@ async def withdraw(user_id: int, amount: int):
         error = f"Failed to withdraw {amount} from user {user_id}: {e}"
         print(error)
         return False
+
+async def add_payment_method(user_id: int,method_type: str, data: dict ):
+    method = {
+            "type": method_type,
+            "data": data
+        }
+    
+    try:
+        client.get_database(db_name).get_collection("users").update_one(
+            {"user_id": user_id},
+            {
+                "$push": {"payment_methods": method}
+            },
+            upsert=True,
+        )
+        log = f"Added {method_type} payment method to user {user_id}"
+        print(log)
+        return True
+    except Exception as e:
+        error = f"Failed to add {method_type} payment method to user {user_id}: {e}"
+        print(error)
+        return False
+    
+async def get_payment_methods(user_id: int) -> list[dict]:
+    try:
+        user = await get_user(user_id)
+        if user:
+            payment_methods = user.get("payment_methods", [])
+            return payment_methods
+        return []
+    except Exception as e:
+        print(f"Failed to get payment methods for user {user_id}: {e}")
+        return []
