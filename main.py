@@ -70,7 +70,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         context.user_data.pop("deposit")
         context.user_data.pop("withdraw")
     else:
-        await query.edit_message_text(f"Callback data: {data}")
+        await query.edit_message_text("Unknown command")
 
 async def handle_deposit(amount: int, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
