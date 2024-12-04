@@ -347,6 +347,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         if update.callback_query:
+            if update.callback_query.data.startswith("cancel"):
+                return
             await update.callback_query.edit_message_text("An error occurred")
         elif update and update.message:
             await update.message.reply_text("An error occurred")
