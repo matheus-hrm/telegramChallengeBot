@@ -1,4 +1,21 @@
-from callback import CallbackTypes
+from callback import (
+    CRYPTO_TYPE_BTC,
+    CRYPTO_TYPE_ETH,
+    CRYPTO_TYPE_USDT,
+    METHOD_TYPE_BANK,
+    METHOD_TYPE_CRYPTO,
+    METHOD_TYPE_PAYPAL,
+    WITHDRAW,
+    CONFIRM_DEPOSIT,
+    CONFIRM_WITHDRAW,
+    DEPOSIT,
+    CANCEL,
+    ADD_METHOD,
+    BALANCE,
+    CRYPTO_TYPE,
+    METHOD_TYPE,
+    SELECT_METHOD,
+)
 from config import token
 from db import add_payment_method, deposit, get_last_transaction, get_payment_methods, get_user_balance, withdraw
 from telegram import (
@@ -19,24 +36,24 @@ from telegram.ext import (
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     buttons = [
         [
-            InlineKeyboardButton("Deposit", callback_data=CallbackTypes.DEPOSIT.value),
-            InlineKeyboardButton("Withdraw", callback_data=CallbackTypes.WITHDRAW.value),
-            InlineKeyboardButton("Balance", callback_data=CallbackTypes.BALANCE.value),
+            InlineKeyboardButton("Deposit", callback_data=DEPOSIT),
+            InlineKeyboardButton("Withdraw", callback_data=WITHDRAW),
+            InlineKeyboardButton("Balance", callback_data=BALANCE),
         ]
     ]
-    reply_markup = InlineKeyboardMarkup(buttons)
+    
     await update.message.reply_text(
-        "Hello, use the three options to deposit, withdraw or check balance"
-        ,reply_markup=reply_markup
+        "Hello, use the three options to deposit, withdraw or check balance",
+        reply_markup=InlineKeyboardMarkup(buttons)
     )
 
 async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Enter the amount you want to withdraw")
-    context.user_data["action"] = CallbackTypes.WITHDRAW 
+    context.user_data["action"] = WITHDRAW 
     
 async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Enter the amount you want to deposit")
-    context.user_data["action"] = CallbackTypes.DEPOSIT
+    context.user_data["action"] = DEPOSIT
     
 
 
@@ -46,19 +63,19 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await query.answer()
     data = query.data
 
-    if data.startswith(CallbackTypes.DEPOSIT.value):
+    if data.startswith(DEPOSIT):
         await query.edit_message_text("Enter the amount you want to deposit")
-        context.user_data["action"] = CallbackTypes.DEPOSIT
+        context.user_data["action"] = DEPOSIT
 
-    elif data.startswith(CallbackTypes.WITHDRAW.value):
+    elif data.startswith(WITHDRAW):
         await query.edit_message_text("Enter the amount you want to withdraw")
-        context.user_data["action"] = CallbackTypes.WITHDRAW
+        context.user_data["action"] = WITHDRAW
        
-    elif data.startswith(CallbackTypes.BALANCE.value):
+    elif data.startswith(BALANCE):
         await handle_check_balance(update, context)
-        context.user_data["action"] = CallbackTypes.BALANCE 
+        context.user_data["action"] = BALANCE 
         
-    elif data.startswith(CallbackTypes.CONFIRM_DEPOSIT.value):
+    elif data.startswith(CONFIRM_DEPOSIT):
         amount = context.user_data.get("deposit_amount")
         if amount:
             await handle_deposit(amount, update, context)
@@ -67,28 +84,28 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         else:
             await query.edit_message_text("No deposit amount found")
     
-    elif data.startswith(CallbackTypes.CONFIRM_WITHDRAW.value):
+    elif data.startswith(CONFIRM_WITHDRAW):
         amount = context.user_data.get("withdraw_amount")
         await handle_withdraw(amount, update, context)
     
-    elif data.startswith(CallbackTypes.ADD_METHOD.value):
+    elif data.startswith(ADD_METHOD):
         await handle_add_method(update, context)
 
-    elif data.startswith(CallbackTypes.METHOD_TYPE.value):
+    elif data.startswith(METHOD_TYPE):
         await handle_method_type_selection(update, context)
     
-    elif data.startswith(CallbackTypes.CRYPTO_TYPE.value):
-        crypto = data.replace(CallbackTypes.CRYPTO_TYPE.value, "")
+    elif data.startswith(CRYPTO_TYPE):
+        crypto = data.replace(CRYPTO_TYPE, "")
         context.user_data["crypto_currency"] = crypto.upper()
         await query.edit_message_text(f"Enter your {crypto.upper()} address:")
     
-    elif data.startswith(CallbackTypes.SELECT_METHOD.value):
-        method_type = data.replace(CallbackTypes.SELECT_METHOD.value, "")
+    elif data.startswith(SELECT_METHOD):
+        method_type = data.replace(SELECT_METHOD,"")
         if context.user_data.get("deposit_amount"):
             amount = context.user_data["deposit_amount"]
             buttons = [[
-                InlineKeyboardButton("Confirm", callback_data=f"{CallbackTypes.CONFIRM_DEPOSIT.value}"),
-                InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value),
+                InlineKeyboardButton("Confirm", callback_data=CONFIRM_DEPOSIT),
+                InlineKeyboardButton("Cancel", callback_data=CANCEL),
             ]]
             await query.edit_message_text(
                 f"Confirm deposit of {amount} using {method_type}?",
@@ -97,8 +114,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         elif context.user_data.get("withdraw_amount"):
             amount = context.user_data["withdraw_amount"]
             buttons = [[
-                InlineKeyboardButton("Confirm", callback_data=CallbackTypes.CONFIRM_WITHDRAW.value),
-                InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value),
+                InlineKeyboardButton("Confirm", callback_data=CONFIRM_WITHDRAW),
+                InlineKeyboardButton("Cancel", callback_data=CANCEL),
             ]]
             await query.edit_message_text(
                 f"Confirm withdraw of {amount} using {method_type}?",
@@ -106,13 +123,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             )
 
 
-    elif data.startswith(CallbackTypes.CANCEL.value):
+    elif data.startswith(CANCEL):
         await query.edit_message_text("Cancelled the action")
         context.user_data.pop("action")
         context.user_data.pop("deposit_amount")
         context.user_data.pop("withdraw_amount")
     else:
         await query.edit_message_text("Unknown command")
+        
 
 async def handle_deposit(amount: int, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
@@ -175,11 +193,11 @@ async def handle_check_balance(update: Update, context: ContextTypes.DEFAULT_TYP
 async def handle_add_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     buttons = [
         [
-            InlineKeyboardButton("Bank Transfer", callback_data=f"{CallbackTypes.METHOD_TYPE.value}bank"),
-            InlineKeyboardButton("PayPal", callback_data=f"{CallbackTypes.METHOD_TYPE.value}paypal"),
-            InlineKeyboardButton("Crypto", callback_data=f"{CallbackTypes.METHOD_TYPE.value}crypto"),
+            InlineKeyboardButton("Bank Transfer", callback_data=METHOD_TYPE_BANK),
+            InlineKeyboardButton("PayPal", callback_data=METHOD_TYPE_PAYPAL),
+            InlineKeyboardButton("Crypto", callback_data=METHOD_TYPE_CRYPTO),
         ],
-        [InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value)]
+        [InlineKeyboardButton("Cancel", callback_data=CANCEL)]
     ]
     await update.callback_query.edit_message_text(
         "Select payment method type:",
@@ -189,7 +207,7 @@ async def handle_add_method(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 async def handle_method_type_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
-    method_type = query.data.replace(CallbackTypes.METHOD_TYPE.value, "")
+    method_type = query.data.replace(METHOD_TYPE, "")
 
     context.user_data["adding_method"] = True
     context.user_data["method_type"] = method_type
@@ -201,11 +219,11 @@ async def handle_method_type_selection(update: Update, context: ContextTypes.DEF
     elif method_type == "crypto":
         buttons = [
             [
-                InlineKeyboardButton("BTC", callback_data=f"{CallbackTypes.CRYPTO_TYPE.value}btc"),
-                InlineKeyboardButton("ETH", callback_data=f"{CallbackTypes.CRYPTO_TYPE.value}eth"),
-                InlineKeyboardButton("USDT", callback_data=f"{CallbackTypes.CRYPTO_TYPE.value}usdt"),
+                InlineKeyboardButton("BTC", callback_data=CRYPTO_TYPE_BTC),
+                InlineKeyboardButton("ETH", callback_data=CRYPTO_TYPE_ETH),
+                InlineKeyboardButton("USDT", callback_data=CRYPTO_TYPE_USDT),
             ],
-            [InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value)]
+            [InlineKeyboardButton("Cancel", callback_data=CANCEL)]
         ]
         await query.edit_message_text(
             "Select cryptocurrency:",
@@ -215,19 +233,18 @@ async def handle_method_type_selection(update: Update, context: ContextTypes.DEF
 async def show_method_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     methods = await get_payment_methods(user_id)
-    print(methods)
     
     buttons = []
     for method in methods:
         label = format_method_label(method)
         buttons.append([InlineKeyboardButton(
             label, 
-            callback_data=f"{CallbackTypes.SELECT_METHOD.value}{method['type']}"
+            callback_data=f"{SELECT_METHOD}{method['type']}"
         )])
     
     buttons.append([
-        InlineKeyboardButton("Add New Method", callback_data=CallbackTypes.ADD_METHOD.value),
-        InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value)
+        InlineKeyboardButton("Add New Method", callback_data=ADD_METHOD),
+        InlineKeyboardButton("Cancel", callback_data=CANCEL)
     ])
     
     await update.message.reply_text(
@@ -281,8 +298,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if context.user_data.get("deposit_amount"):
             amount = context.user_data["deposit_amount"]
             buttons = [[
-                InlineKeyboardButton("Confirm", callback_data=CallbackTypes.CONFIRM_DEPOSIT.value),
-                InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value),
+                InlineKeyboardButton("Confirm", callback_data=CONFIRM_DEPOSIT),
+                InlineKeyboardButton("Cancel", callback_data=CANCEL),
             ]]
             await update.message.reply_text(
                 f"Confirm deposit of {amount}?",
@@ -291,8 +308,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if context.user_data.get("withdraw_amount"):
             amount = context.user_data["withdraw_amount"]
             buttons = [[
-                InlineKeyboardButton("Confirm", callback_data=CallbackTypes.CONFIRM_WITHDRAW.value),
-                InlineKeyboardButton("Cancel", callback_data=CallbackTypes.CANCEL.value),
+                InlineKeyboardButton("Confirm", callback_data=CONFIRM_WITHDRAW),
+                InlineKeyboardButton("Cancel", callback_data=CANCEL),
             ]]
             await update.callback_query.edit_message_text(
                 f"Confirm withdraw of {amount}?",
@@ -301,7 +318,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await handle_withdraw(amount, update, context)
         return
 
-    if context.user_data.get("action") == CallbackTypes.DEPOSIT:
+    if context.user_data.get("action") == DEPOSIT:
         try:
             amount = int(text)
             if amount <= 0:
@@ -313,7 +330,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text("Invalid amount, please enter a valid amount")
             return
 
-    elif context.user_data.get("action") == CallbackTypes.WITHDRAW:
+    elif context.user_data.get("action") == WITHDRAW:
         try:
             amount = int(text)
             if amount <= 0:
