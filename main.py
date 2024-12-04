@@ -15,7 +15,6 @@ from telegram.ext import (
     filters
 )
 
-
 # Commands
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     buttons = [
@@ -97,7 +96,7 @@ async def handle_withdraw(amount: int, update: Update, context: ContextTypes.DEF
         if withdrew:
             await update.callback_query.edit_message_text(f"Withdrew {amount} successfully")
         else:
-            await update.callback_query.edit_message_text(f"Failed to withdraw {amount}")
+            await update.callback_query.edit_message_text(f"Failed to withdraw {amount}, Insufficient funds")
     else:
         if withdrew:
             await update.message.reply_text(f"Withdrew {amount} successfully")
