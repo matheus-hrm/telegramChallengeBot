@@ -48,11 +48,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Enter the amount you want to withdraw")
+    cancel_button = [
+        [InlineKeyboardButton("Cancel", callback_data=CANCEL)]
+    ]
+    await update.message.reply_text("Enter the amount you want to withdraw", reply_markup=InlineKeyboardMarkup(cancel_button))
     context.user_data["action"] = WITHDRAW 
     
 async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Enter the amount you want to deposit")
+    cancel_button = [
+        [InlineKeyboardButton("Cancel", callback_data=CANCEL)]
+    ]
+    await update.message.reply_text("Enter the amount you want to deposit"
+                                    , reply_markup=InlineKeyboardMarkup(cancel_button))
     context.user_data["action"] = DEPOSIT
     
 
@@ -63,12 +70,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await query.answer()
     data = query.data
 
+    cancel_button = [
+        [InlineKeyboardButton("Cancel", callback_data=CANCEL)]
+    ]
+
     if data.startswith(DEPOSIT):
-        await query.edit_message_text("Enter the amount you want to deposit")
+        await query.edit_message_text(
+            "Enter the amount you want to deposit",
+            reply_markup=InlineKeyboardMarkup(cancel_button)
+        )
         context.user_data["action"] = DEPOSIT
 
     elif data.startswith(WITHDRAW):
-        await query.edit_message_text("Enter the amount you want to withdraw")
+        await query.edit_message_text(
+            "Enter the amount you want to withdraw",
+            reply_markup=InlineKeyboardMarkup(cancel_button)
+        )
         context.user_data["action"] = WITHDRAW
        
     elif data.startswith(BALANCE):
